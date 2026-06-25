@@ -72,36 +72,35 @@ export function Feedback({ state, fb }: FeedbackProps) {
       {/* detailed why */}
       <p className="px-4 pb-1 pt-2 text-sm leading-relaxed text-white/85">{fb.explanation}</p>
 
-      {/* clean expandable fun fact */}
+      {/* one expanding box — the "הידעת?" header and its content live together */}
       {fb.funFact && (
         <div className="px-4 pb-4 pt-2">
-          <button
-            type="button"
-            onClick={() => setFactOpen((o) => !o)}
-            aria-expanded={factOpen}
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/50 bg-[var(--accent)]/10 px-3.5 py-1.5 text-xs font-display font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/20"
-          >
-            <Bulb className="h-3.5 w-3.5" />
-            הידעת?
-            <motion.span aria-hidden animate={{ rotate: factOpen ? 180 : 0 }} className="text-[10px] opacity-70">
-              ▾
-            </motion.span>
-          </button>
-          <AnimatePresence initial={false}>
-            {factOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.35, ease: 'easeInOut' }}
-              >
-                <div className="mt-2 flex gap-2.5 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-3">
-                  <Bulb className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
-                  <p className="text-sm leading-relaxed text-white/85">{fb.funFact}</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div className="overflow-hidden rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/10">
+            <button
+              type="button"
+              onClick={() => setFactOpen((o) => !o)}
+              aria-expanded={factOpen}
+              className="flex w-full items-center gap-2 px-3.5 py-2.5 text-right font-display text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10"
+            >
+              <Bulb className="h-4 w-4 shrink-0" />
+              <span className="flex-1">הידעת?</span>
+              <motion.span aria-hidden animate={{ rotate: factOpen ? 180 : 0 }} className="text-lg leading-none">
+                ▾
+              </motion.span>
+            </button>
+            <AnimatePresence initial={false}>
+              {factOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.35, ease: 'easeInOut' }}
+                >
+                  <p className="px-3.5 pb-3.5 text-sm leading-relaxed text-white/85">{fb.funFact}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </motion.div>

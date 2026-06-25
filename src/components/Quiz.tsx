@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { X } from 'lucide-react'
 import { quizQuestions } from '../data/quizData'
 import { ui } from '../data/ui'
 import { cn } from '../utils/cn'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { EtherealShadow } from './ui/etheral-shadow'
+import { FlowButton } from './ui/flow-button'
 
 interface QuizProps {
   onClose: () => void
@@ -86,6 +88,16 @@ export function Quiz({ onClose, onBackToTimeline }: QuizProps) {
       </div>
       <div className="absolute inset-0 -z-10 backdrop-blur-sm" />
 
+      {/* close (X) at the top-right */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="סגור"
+        className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-black/40 text-white/80 backdrop-blur transition-colors hover:bg-black/60 hover:text-white"
+      >
+        <X className="h-5 w-5" strokeWidth={2} />
+      </button>
+
       <div className="relative w-full max-w-2xl">
         {!finished ? (
           <div className="glass-card p-6 md:p-8">
@@ -147,9 +159,9 @@ export function Quiz({ onClose, onBackToTimeline }: QuizProps) {
                 )}
 
                 {answered && (
-                  <button type="button" onClick={next} className="btn-primary mt-5">
-                    {isLast ? ui.buttons.finish : ui.buttons.next}
-                  </button>
+                  <div className="mt-5 flex justify-start">
+                    <FlowButton text={isLast ? ui.buttons.finish : ui.buttons.next} onClick={next} />
+                  </div>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -204,25 +216,11 @@ export function Quiz({ onClose, onBackToTimeline }: QuizProps) {
 
             <p className="mt-4 text-lg text-white/85">{scoreMessage}</p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <button type="button" onClick={restart} className="btn-primary">
-                {ui.buttons.again}
-              </button>
-              <button type="button" onClick={onBackToTimeline} className="btn-ghost">
-                {ui.buttons.backToTimeline}
-              </button>
+              <FlowButton text={ui.buttons.again} onClick={restart} />
+              <FlowButton text={ui.buttons.backToTimeline} onClick={onBackToTimeline} />
             </div>
           </motion.div>
         )}
-
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm text-white/50 underline-offset-4 hover:underline"
-          >
-            סגור
-          </button>
-        </div>
       </div>
     </motion.div>
   )

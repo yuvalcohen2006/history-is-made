@@ -38,20 +38,16 @@ export function PickArtifact({
             <motion.button
               key={i}
               type="button"
-              whileHover={!answered ? { y: -4 } : undefined}
               whileTap={{ scale: 0.97 }}
               disabled={answered}
               onClick={() => handlePick(i)}
               className={cn(
-                'group relative overflow-hidden rounded-xl border px-3 pb-3 pt-6 text-center transition-colors',
-                'border-white/15 bg-gradient-to-b from-white/10 to-black/20 hover:from-white/15',
-                showCorrect && 'border-emerald-400/70 from-emerald-500/25',
-                showWrong && 'border-rose-400/70 from-rose-500/25',
+                'opt-btn flex min-h-[3.75rem] items-center justify-center text-center',
+                showCorrect && 'border-emerald-400/60 bg-emerald-500/20',
+                showWrong && 'border-rose-400/60 bg-rose-500/20',
               )}
             >
-              {/* simple vitrine glyph */}
-              <span aria-hidden className="mx-auto mb-2 block h-8 w-8 rounded-full border border-current opacity-50" />
-              <span className="text-sm font-medium">{opt.label}</span>
+              {opt.label}
             </motion.button>
           )
         })}

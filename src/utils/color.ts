@@ -15,3 +15,10 @@ export function lighten(hex: string, amount: number): string {
   const [r, g, b] = parseHex(hex)
   return toHex(r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amount)
 }
+
+/** Darken a hex color toward black by `amount` (0..1). */
+export function darken(hex: string, amount: number): string {
+  const [r, g, b] = parseHex(hex)
+  const k = 1 - amount
+  return toHex(r * k, g * k, b * k)
+}

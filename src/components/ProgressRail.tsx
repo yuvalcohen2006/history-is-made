@@ -21,18 +21,27 @@ const points = stations.map((_, i) => {
   }
 })
 
-/** Smooth path string through the node centers (midpoint quadratics). */
+/**
+ * Smooth Catmull-Rom spline that passes EXACTLY through every node center
+ * (converted to cubic Béziers), so the dotted trail runs through the middle of
+ * each circle — not merely near it.
+ */
 function buildPath() {
-  let d = `M ${points[0].x} ${points[0].y}`
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1]
-    const cur = points[i]
-    const mx = (prev.x + cur.x) / 2
-    const my = (prev.y + cur.y) / 2
-    d += ` Q ${prev.x} ${prev.y} ${mx} ${my}`
+  const p = points
+  const n = p.length
+  if (n < 2) return ''
+  let d = `M ${p[0].x} ${p[0].y}`
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = p[i - 1] ?? p[i]
+    const p1 = p[i]
+    const p2 = p[i + 1]
+    const p3 = p[i + 2] ?? p2
+    const c1x = p1.x + (p2.x - p0.x) / 6
+    const c1y = p1.y + (p2.y - p0.y) / 6
+    const c2x = p2.x - (p3.x - p1.x) / 6
+    const c2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`
   }
-  const last = points[points.length - 1]
-  d += ` T ${last.x} ${last.y}`
   return d
 }
 const pathD = buildPath()

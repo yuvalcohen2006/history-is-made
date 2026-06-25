@@ -7,10 +7,12 @@ import { interactions } from '../data/interactionsData'
 import { stations } from '../data/timelineData'
 import { ui } from '../data/ui'
 import { cn } from '../utils/cn'
+import { darken } from '../utils/color'
 import { useProgress } from '../progress/ProgressProvider'
 import { useAudio } from '../audio/AudioProvider'
 import { MuseumFrame } from './MuseumFrame'
 import { HolographicCard } from './ui/holographic-card'
+import { FlowButton } from './ui/flow-button'
 import { Lock } from './icons/Lock'
 import { InteractionRenderer } from './interactions/InteractionRenderer'
 
@@ -120,11 +122,22 @@ export function TimelineStation({ station, index }: TimelineStationProps) {
           {station.title}
         </motion.h2>
 
-        {/* opener — plain, no card */}
+        {/* opener — plain, no card. On the bright summary era, use a gradient
+            (darker purple → accent) so the far-left edge stays readable. */}
         <motion.p
           variants={item}
           className="mt-4 max-w-2xl text-lg font-bold leading-relaxed md:text-xl"
-          style={{ color: theme.accent, textShadow: '0 2px 16px rgba(0,0,0,0.9)' }}
+          style={
+            station.eraKey === 'summary'
+              ? {
+                  backgroundImage: `linear-gradient(to left, ${theme.accent}, ${darken(theme.accent, 0.45)})`,
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  color: 'transparent',
+                }
+              : { color: theme.accent, textShadow: '0 2px 16px rgba(0,0,0,0.9)' }
+          }
         >
           {station.opener}
         </motion.p>
@@ -148,17 +161,17 @@ export function TimelineStation({ station, index }: TimelineStationProps) {
             {/* key concept — framed by two corner brackets (top-left + bottom-right),
                 top gap equal to the column gap; icon sits to the right of the text */}
             <div
-              className="relative mt-7 flex flex-1 items-center justify-start px-6"
+              className="relative mt-7 flex flex-1 items-center justify-start px-6 py-8"
               style={{ textShadow: '0 2px 14px rgba(0,0,0,0.85)' }}
             >
-              {/* corner brackets — match the card's stroke: white, 1.5px, rounded, soft glow */}
+              {/* corner brackets — match the card's stroke: white, 1.5px, rounded, white glow */}
               <span
                 className="pointer-events-none absolute left-0 top-0 h-1/3 w-1/3 rounded-tl-2xl border-l-[1.5px] border-t-[1.5px] border-white/80"
-                style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.4))' }}
+                style={{ filter: 'drop-shadow(0 0 9px rgba(255,255,255,0.65))' }}
               />
               <span
                 className="pointer-events-none absolute bottom-0 right-0 h-1/3 w-1/3 rounded-br-2xl border-b-[1.5px] border-r-[1.5px] border-white/80"
-                style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.4))' }}
+                style={{ filter: 'drop-shadow(0 0 9px rgba(255,255,255,0.65))' }}
               />
 
               <div className="flex items-center gap-4">
@@ -200,19 +213,27 @@ export function TimelineStation({ station, index }: TimelineStationProps) {
           </motion.div>
         </div>
 
-        {/* interactive challenge — centered, contained width, sequential questions */}
+        {/* practice questions — no card, right-aligned, open on the page */}
         {questions.length > 0 && (
-          <motion.div variants={item} className="glass-card mx-auto mt-8 max-w-3xl p-6 text-white">
-            <h3 className="mb-4 text-center font-display text-sm uppercase tracking-[0.2em] text-[var(--accent)]">
+          <motion.div
+            variants={item}
+            className="mt-14 max-w-2xl text-right text-white"
+            style={{ textShadow: '0 2px 14px rgba(0,0,0,0.85)' }}
+          >
+            <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
               {ui.station.challenge}
             </h3>
 
-            {/* question counter for multi-question stations (no circles) */}
-            {questions.length > 1 && (
-              <p className="mb-5 text-center text-xs text-white/55">
-                שאלה {qIndex + 1} מתוך {questions.length}
-              </p>
-            )}
+            {/* segmented progress — one line per question, fills right-to-left (RTL) */}
+            <div className="mb-6 flex gap-2">
+              {questions.map((_, i) => (
+                <span
+                  key={i}
+                  className="h-1 flex-1 rounded-full transition-colors duration-300"
+                  style={{ backgroundColor: i <= qIndex ? 'var(--accent)' : 'rgba(255,255,255,0.18)' }}
+                />
+              ))}
+            </div>
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -234,11 +255,9 @@ export function TimelineStation({ station, index }: TimelineStationProps) {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-6 flex justify-center"
+                className="mt-6 flex justify-start"
               >
-                <button type="button" onClick={nextQuestion} className="btn-primary">
-                  לשאלה הבאה
-                </button>
+                <FlowButton text="לשאלה הבאה" onClick={nextQuestion} />
               </motion.div>
             )}
 
@@ -248,12 +267,9 @@ export function TimelineStation({ station, index }: TimelineStationProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="mt-6 flex flex-col items-center gap-2"
+                className="mt-6 flex justify-start"
               >
-                <button type="button" onClick={goNext} className="btn-primary">
-                  {ui.buttons.next}
-                </button>
-                <span className="text-xs text-white/55">או המשיכו בגלילה</span>
+                <FlowButton text={ui.buttons.next} onClick={goNext} />
               </motion.div>
             )}
           </motion.div>

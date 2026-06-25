@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ClassifyInteraction } from '../../types'
 import { cn } from '../../utils/cn'
+import { useAudio } from '../../audio/AudioProvider'
 import { Feedback, type FeedbackState } from './Feedback'
 import type { InteractionProps } from './InteractionRenderer'
 
@@ -16,17 +17,19 @@ function shuffledIndices(n: number): number[] {
 }
 
 /**
- * Card-sorting: one shuffled card at a time, sent to one of two buckets. At the
- * end it reviews every item — what you chose and the correct bucket — so a miss
- * is fully explained (no retry).
+ * Card-sorting: one shuffled card at a time, sent to one of two buckets. Each
+ * placement gives INSTANT feedback — the chosen bucket flashes green/red with a
+ * sound — then advances. At the end it keeps a short tally of right/wrong.
  */
 export function ClassifySwipe({
   data,
   onResolved,
 }: { data: ClassifyInteraction } & InteractionProps) {
+  const { playUi } = useAudio()
   const [order] = useState(() => shuffledIndices(data.items.length))
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<number, 0 | 1>>({})
+  const [flash, setFlash] = useState<{ bucket: 0 | 1; correct: boolean } | null>(null)
 
   const done = step >= order.length
   const correctCount = useMemo(
@@ -41,14 +44,25 @@ export function ClassifySwipe({
       : 'wrong'
 
   const choose = (bucket: 0 | 1) => {
+    if (flash) return // mid-feedback; ignore
     const origIdx = order[step]
+    const correct = bucket === data.items[origIdx].bucket
     const next = { ...answers, [origIdx]: bucket }
+    const isLast = step + 1 >= order.length
+
     setAnswers(next)
-    setStep((s) => s + 1)
-    if (step + 1 >= order.length) {
-      const allRight = order.every((i) => next[i] === data.items[i].bucket)
-      onResolved?.(allRight)
-    }
+    setFlash({ bucket, correct })
+    // instant per-item sound; the final overall sound is played by the parent on resolve
+    if (!isLast) playUi(correct ? 'correct' : 'wrong')
+
+    window.setTimeout(() => {
+      setFlash(null)
+      setStep((s) => s + 1)
+      if (isLast) {
+        const allRight = order.every((i) => next[i] === data.items[i].bucket)
+        onResolved?.(allRight)
+      }
+    }, 650)
   }
 
   const current = !done ? data.items[order[step]] : null
@@ -65,7 +79,7 @@ export function ClassifySwipe({
               initial={{ opacity: 0, scale: 0.9, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="glass-card grid place-items-center px-6 py-8 text-center"
+              className="grid place-items-center rounded-2xl border border-white/12 bg-black/35 px-6 py-8 text-center backdrop-blur-sm"
             >
               <span className="text-xs text-white/50">
                 {step + 1} / {data.items.length}
@@ -77,7 +91,7 @@ export function ClassifySwipe({
               key="done"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="glass-card px-5 py-5"
+              className="rounded-2xl border border-white/12 bg-black/35 px-5 py-5 backdrop-blur-sm"
             >
               <p className="mb-3 text-center font-display text-lg font-bold">
                 סיווגת נכון {correctCount} מתוך {data.items.length}
@@ -97,10 +111,7 @@ export function ClassifySwipe({
                       )}
                     >
                       <span className="flex items-center gap-2">
-                        <span
-                          aria-hidden
-                          className={right ? 'text-emerald-300' : 'text-rose-300'}
-                        >
+                        <span aria-hidden className={right ? 'text-emerald-300' : 'text-rose-300'}>
                           {right ? '✓' : '✗'}
                         </span>
                         <span>{item.label}</span>
@@ -128,16 +139,24 @@ export function ClassifySwipe({
 
       {!done && (
         <div className="mt-4 grid grid-cols-2 gap-3">
-          {data.buckets.map((bucket, b) => (
-            <button
-              key={b}
-              type="button"
-              onClick={() => choose(b as 0 | 1)}
-              className="opt-btn flex items-center justify-center px-4 py-4 font-display font-bold"
-            >
-              {bucket}
-            </button>
-          ))}
+          {data.buckets.map((bucket, b) => {
+            const isFlash = flash?.bucket === b
+            return (
+              <button
+                key={b}
+                type="button"
+                disabled={!!flash}
+                onClick={() => choose(b as 0 | 1)}
+                className={cn(
+                  'opt-btn flex items-center justify-center px-4 py-4 font-display font-bold transition-colors',
+                  isFlash && flash?.correct && 'border-emerald-400/70 bg-emerald-500/30',
+                  isFlash && !flash?.correct && 'border-rose-400/70 bg-rose-500/30',
+                )}
+              >
+                {bucket}
+              </button>
+            )
+          })}
         </div>
       )}
 

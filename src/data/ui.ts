@@ -26,7 +26,7 @@ export const ui = {
     whatChanged: 'מה השתנה בחיי האדם?',
     concept: 'מושג מרכזי',
     artifact: 'ממצא מספר',
-    challenge: 'בדוק את עצמך',
+    challenge: 'שאלות תרגול',
   },
   summary: {
     title: 'מה השתנה במסע הזה?',

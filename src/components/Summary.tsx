@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { summaryInsights } from '../data/timelineData'
 import { ui } from '../data/ui'
 import { useProgress } from '../progress/ProgressProvider'
+import { FlowButton } from './ui/flow-button'
 
 interface SummaryProps {
   onBackToTimeline: () => void
@@ -16,7 +17,7 @@ export function Summary({ onBackToTimeline, onStartQuiz }: SummaryProps) {
       id="summary"
       aria-label="סיכום המסע"
       className="relative flex min-h-[100svh] items-center px-5 py-24 text-charcoal md:px-10"
-      style={{ ['--accent' as never]: '#f0469b' } as never}
+      style={{ ['--accent' as never]: '#7b61ff' } as never}
     >
       <div className="mx-auto w-full max-w-3xl text-center">
         <motion.h2
@@ -39,8 +40,8 @@ export function Summary({ onBackToTimeline, onStartQuiz }: SummaryProps) {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               className="flex items-center gap-4 rounded-2xl border border-black/10 bg-white/50 p-4 backdrop-blur"
             >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--accent)] font-display text-lg font-black text-sand">
-                {i + 1}
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--accent)] font-display text-lg font-black leading-none text-sand">
+                <span className="block translate-y-[1px]">{i + 1}</span>
               </span>
               <span className="text-lg font-medium">{insight}</span>
             </motion.li>
@@ -48,21 +49,8 @@ export function Summary({ onBackToTimeline, onStartQuiz }: SummaryProps) {
         </ol>
 
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <button
-            type="button"
-            onClick={onStartQuiz}
-            disabled={!allDone}
-            className="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {ui.buttons.startQuiz}
-          </button>
-          <button
-            type="button"
-            onClick={onBackToTimeline}
-            className="btn-ghost text-charcoal"
-          >
-            {ui.buttons.backToTimeline}
-          </button>
+          <FlowButton text={ui.buttons.startQuiz} onClick={onStartQuiz} disabled={!allDone} />
+          <FlowButton text={ui.buttons.backToTimeline} onClick={onBackToTimeline} />
         </div>
         {!allDone && (
           <p className="mt-4 text-sm text-charcoal/70">

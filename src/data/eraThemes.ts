@@ -147,8 +147,8 @@ export const eraThemes: Record<EraKey, EraTheme> = {
     key: 'summary',
     background:
       'linear-gradient(180deg, #f4efe4 0%, #e6ddca 45%, #cfc2a4 100%)',
-    accent: '#f0469b',
-    shadow: 'rgba(240,70,155,0.3)',
+    accent: '#7b61ff',
+    shadow: 'rgba(123,97,255,0.3)',
     tone: 'dark',
     particles: 'none',
   },

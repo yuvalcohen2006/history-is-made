@@ -1,25 +1,47 @@
 import { useRef, useState, type MouseEvent } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import type { MapInteraction } from '../../types'
 import { Feedback, type FeedbackState } from './Feedback'
 import type { InteractionProps } from './InteractionRenderer'
 
-/** Stylized continent geometry on a 1000×560 plane (cx, cy, rx, ry). */
-const GEO: Record<string, { cx: number; cy: number; rx: number; ry: number }> = {
-  americas: { cx: 215, cy: 300, rx: 95, ry: 150 },
-  europe: { cx: 525, cy: 150, rx: 70, ry: 55 },
-  africa: { cx: 545, cy: 345, rx: 105, ry: 130 },
-  asia: { cx: 745, cy: 200, rx: 150, ry: 100 },
-  oceania: { cx: 830, cy: 445, rx: 75, ry: 55 },
+/**
+ * Stylized continent geometry on a 1000×560 plane. `d` is a rough landmass
+ * silhouette (not an ellipse); cx/cy is the center used for routes + labels.
+ */
+const GEO: Record<string, { cx: number; cy: number; d: string }> = {
+  americas: {
+    cx: 245,
+    cy: 295,
+    d: 'M250 100 L286 140 L255 182 L286 226 L256 262 L276 322 L250 458 L224 406 L240 346 L210 286 L240 236 L210 186 L242 140 Z',
+  },
+  europe: {
+    cx: 528,
+    cy: 152,
+    d: 'M480 118 L560 112 L590 150 L562 192 L505 196 L472 162 Z',
+  },
+  africa: {
+    cx: 548,
+    cy: 345,
+    d: 'M505 235 L600 245 L626 315 L590 392 L548 472 L520 420 L500 360 L470 305 L488 255 Z',
+  },
+  asia: {
+    cx: 745,
+    cy: 200,
+    d: 'M610 176 L705 120 L820 120 L896 176 L856 246 L760 282 L665 258 L620 218 Z',
+  },
+  oceania: {
+    cx: 838,
+    cy: 442,
+    d: 'M788 410 L858 402 L902 442 L862 478 L806 472 L778 444 Z',
+  },
 }
 
-const ORIGIN = { x: 545, y: 320 }
+const ORIGIN = { x: 545, y: 330 }
 
 /**
- * Interactive pseudo-3D migration map. The plane is gently tilted in CSS
- * perspective and the continents are "extruded" (a darker offset copy) for a
- * raised relief look. The learner taps the continent humans migrated OUT of
- * (Africa); on success the glowing migration routes animate outward.
+ * Interactive pseudo-3D migration map. The plane is gently tilted; the learner
+ * taps the continent humans migrated OUT of (Africa); on success the glowing
+ * migration routes animate outward.
  */
 export function MigrationMap({
   data,
@@ -31,12 +53,11 @@ export function MigrationMap({
 
   const answered = chosen !== null
   const correct = answered && (data.regions.find((r) => r.id === chosen)?.correct ?? false)
-  // once answered, always reveal the correct origin + routes (no retry)
   const revealed = answered
   const state: FeedbackState = !answered ? 'idle' : correct ? 'correct' : 'wrong'
 
   const pick = (id: string) => {
-    if (answered) return // locks on first choice
+    if (answered) return
     setChosen(id)
     onResolved?.(data.regions.find((r) => r.id === id)?.correct ?? false)
   }
@@ -104,7 +125,7 @@ export function MigrationMap({
               ))}
             </g>
 
-            {/* continents (extruded + relief highlight) */}
+            {/* continents — landmass silhouettes, extruded, with a hover glow */}
             {data.regions.map((r) => {
               const g = GEO[r.id]
               if (!g) return null
@@ -119,29 +140,19 @@ export function MigrationMap({
                   style={{ opacity: dimmed ? 0.45 : 1, transition: 'opacity 0.6s' }}
                 >
                   {/* extrusion depth */}
-                  <ellipse cx={g.cx} cy={g.cy + 14} rx={g.rx} ry={g.ry} fill="#0c1114" opacity={0.75} />
-                  <motion.ellipse
-                    cx={g.cx}
-                    cy={g.cy}
-                    rx={g.rx}
-                    ry={g.ry}
+                  <path d={g.d} transform="translate(0,13)" fill="#0c1114" opacity={0.75} />
+                  <motion.path
+                    d={g.d}
+                    className="continent"
                     fill={isOrigin && revealed ? 'url(#landGold)' : 'url(#land)'}
-                    stroke={isWrong ? '#fb7185' : 'rgba(255,255,255,0.28)'}
+                    stroke={isWrong ? '#fb7185' : 'rgba(255,255,255,0.3)'}
                     strokeWidth={isWrong ? 4 : 2}
+                    strokeLinejoin="round"
                     animate={isWrong ? { x: [0, -6, 6, -4, 0] } : { x: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="hover:brightness-110"
                     style={{
-                      filter: isOrigin && revealed ? 'drop-shadow(0 0 18px rgba(233,194,102,0.8))' : 'none',
+                      filter: isOrigin && revealed ? 'drop-shadow(0 0 18px rgba(233,194,102,0.85))' : 'none',
                     }}
-                  />
-                  {/* top relief highlight */}
-                  <ellipse
-                    cx={g.cx}
-                    cy={g.cy - g.ry * 0.35}
-                    rx={g.rx * 0.7}
-                    ry={g.ry * 0.32}
-                    fill="rgba(255,255,255,0.12)"
                   />
                 </g>
               )
@@ -191,14 +202,7 @@ export function MigrationMap({
               const dimmed = revealed && !r.correct
               return (
                 <g key={`lbl-${r.id}`} className="pointer-events-none" style={{ opacity: dimmed ? 0.5 : 1 }}>
-                  <rect
-                    x={g.cx - w / 2}
-                    y={g.cy - 20}
-                    width={w}
-                    height={40}
-                    rx={20}
-                    fill="rgba(0,0,0,0.55)"
-                  />
+                  <rect x={g.cx - w / 2} y={g.cy - 20} width={w} height={40} rx={20} fill="rgba(0,0,0,0.55)" />
                   <text
                     x={g.cx}
                     y={g.cy}
@@ -215,14 +219,6 @@ export function MigrationMap({
           </svg>
         </motion.div>
       </div>
-
-      <AnimatePresence>
-        {!answered && (
-          <motion.p exit={{ opacity: 0 }} className="mt-3 text-center text-sm text-white/60">
-            רמז: כל בני האדם כיום מקורם ביבשת אחת.
-          </motion.p>
-        )}
-      </AnimatePresence>
 
       <Feedback state={state} fb={data.fb} />
     </div>

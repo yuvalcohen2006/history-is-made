@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { Reorder } from 'framer-motion'
+import { GripVertical } from 'lucide-react'
 import type { OrderInteraction } from '../../types'
 import { cn } from '../../utils/cn'
 import { Feedback, type FeedbackState } from './Feedback'
+import { FlowButton } from '../ui/flow-button'
 import type { InteractionProps } from './InteractionRenderer'
 
 /** Returns a shuffled copy of indices that is guaranteed not to be sorted. */
@@ -12,15 +14,13 @@ function shuffledOrder(n: number): number[] {
     const j = Math.floor(Math.random() * (i + 1))
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
-  const sorted = arr.every((v, i) => v === i)
-  if (sorted && n > 1) [arr[0], arr[1]] = [arr[1], arr[0]]
+  if (arr.every((v, i) => v === i) && n > 1) [arr[0], arr[1]] = [arr[1], arr[0]]
   return arr
 }
 
 /**
- * Ordering interaction: steps start shuffled; the learner moves them up/down
- * into the correct sequence, then checks. Up/down buttons keep it keyboard- and
- * touch-friendly (no drag dependency).
+ * Ordering interaction: steps start shuffled and are reordered by DRAGGING the
+ * rows (grip handle shows the affordance), then checked.
  */
 export function OrderSteps({
   data,
@@ -32,77 +32,50 @@ export function OrderSteps({
   const isCorrect = useMemo(() => order.every((v, i) => v === i), [order])
   const state: FeedbackState = !checked ? 'idle' : isCorrect ? 'correct' : 'wrong'
 
-  const move = (pos: number, dir: -1 | 1) => {
-    const target = pos + dir
-    if (target < 0 || target >= order.length) return
-    setOrder((prev) => {
-      const next = [...prev]
-      ;[next[pos], next[target]] = [next[target], next[pos]]
-      return next
-    })
-  }
-
   return (
     <div>
       <p className="mb-4 font-display text-lg font-bold">{data.prompt}</p>
-      <ol className="flex flex-col gap-2">
-        <AnimatePresence initial={false}>
-          {order.map((stepIdx, pos) => {
-            const slotCorrect = checked && stepIdx === pos
-            return (
-              <motion.li
-                key={stepIdx}
-                layout
-                transition={{ type: 'spring', stiffness: 500, damping: 40 }}
-                className={cn(
-                  'flex items-center gap-3 rounded-xl border px-3 py-3',
-                  'border-white/15 bg-white/5',
-                  checked && (slotCorrect ? 'border-emerald-400/60 bg-emerald-500/15' : 'border-rose-400/60 bg-rose-500/15'),
-                )}
-              >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--accent)] text-sm font-bold text-charcoal">
-                  {pos + 1}
-                </span>
-                <span className="flex-1 text-sm">{data.steps[stepIdx]}</span>
-                {!checked && (
-                  <span className="flex shrink-0 flex-col">
-                    <button
-                      type="button"
-                      aria-label="הזז למעלה"
-                      onClick={() => move(pos, -1)}
-                      disabled={pos === 0}
-                      className="px-1 text-white/70 disabled:opacity-30 hover:text-white"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="הזז למטה"
-                      onClick={() => move(pos, 1)}
-                      disabled={pos === order.length - 1}
-                      className="px-1 text-white/70 disabled:opacity-30 hover:text-white"
-                    >
-                      ▼
-                    </button>
-                  </span>
-                )}
-              </motion.li>
-            )
-          })}
-        </AnimatePresence>
-      </ol>
+
+      <Reorder.Group
+        axis="y"
+        values={order}
+        onReorder={(v) => !checked && setOrder(v)}
+        className="flex flex-col gap-2"
+      >
+        {order.map((stepIdx, pos) => {
+          const slotCorrect = checked && stepIdx === pos
+          return (
+            <Reorder.Item
+              key={stepIdx}
+              value={stepIdx}
+              dragListener={!checked}
+              whileDrag={{ scale: 1.03, boxShadow: '0 12px 30px -10px rgba(0,0,0,0.7)' }}
+              className={cn(
+                'flex select-none items-center gap-3 rounded-xl border bg-black/35 px-3 py-3 backdrop-blur-sm',
+                !checked && 'cursor-grab border-white/15 active:cursor-grabbing',
+                checked && (slotCorrect ? 'border-emerald-400/60 bg-emerald-500/15' : 'border-rose-400/60 bg-rose-500/15'),
+              )}
+            >
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--accent)] text-sm font-bold leading-none text-charcoal">
+                <span className="block translate-y-[1px]">{pos + 1}</span>
+              </span>
+              <span className="flex-1 text-sm">{data.steps[stepIdx]}</span>
+              {!checked && <GripVertical className="h-5 w-5 shrink-0 text-white/35" aria-hidden />}
+            </Reorder.Item>
+          )
+        })}
+      </Reorder.Group>
 
       {!checked && (
-        <button
-          type="button"
-          onClick={() => {
-            setChecked(true)
-            onResolved?.(isCorrect)
-          }}
-          className="mt-4 btn-primary"
-        >
-          בדוק סדר
-        </button>
+        <div className="mt-5 flex justify-start">
+          <FlowButton
+            text="בדוק סדר"
+            onClick={() => {
+              setChecked(true)
+              onResolved?.(isCorrect)
+            }}
+          />
+        </div>
       )}
       <Feedback state={state} fb={data.fb} />
     </div>

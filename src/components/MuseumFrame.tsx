@@ -14,9 +14,9 @@ interface MuseumFrameProps {
 }
 
 /**
- * The single artifact card: the photo, a name caption, a cursor-follow sheen,
- * and a hover accordion that reveals the explanation. Clicking the photo opens a
- * fullscreen lightbox.
+ * The single artifact card: the photo, a name caption, the explanation shown
+ * statically, and a cursor-follow sheen. Clicking the photo opens a fullscreen
+ * lightbox.
  */
 export function MuseumFrame({ image, caption, description, className }: MuseumFrameProps) {
   const [loaded, setLoaded] = useState(false)
@@ -53,7 +53,7 @@ export function MuseumFrame({ image, caption, description, className }: MuseumFr
         transition={{ duration: 0.6 }}
         onMouseMove={onMove}
         className={cn(
-          'sheen-host group flex flex-col overflow-hidden rounded-2xl border border-white/12 bg-black/45 p-3 backdrop-blur-sm',
+          'sheen-host group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/45 p-3 backdrop-blur-sm',
           className,
         )}
       >
@@ -106,13 +106,11 @@ export function MuseumFrame({ image, caption, description, className }: MuseumFr
           {caption}
         </p>
 
-        {/* hover accordion — explanation, right-aligned */}
+        {/* explanation — shown statically inside the container */}
         {description && (
-          <div className="relative z-0 grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out group-hover:grid-rows-[1fr]">
-            <div className="overflow-hidden">
-              <p className="pt-3 text-right text-base leading-relaxed text-white/85">{description}</p>
-            </div>
-          </div>
+          <p className="relative z-0 mt-3 text-right text-base leading-relaxed text-white/85">
+            {description}
+          </p>
         )}
       </motion.div>
 

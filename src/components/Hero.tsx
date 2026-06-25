@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ui } from '../data/ui'
+import { FlowButton } from './ui/flow-button'
 
 interface HeroProps {
   onStart: () => void
@@ -10,6 +11,24 @@ interface HeroProps {
  *  sits in the upper-center so the fire (bottom ~half of the clip) stays clear. */
 export function Hero({ onStart }: HeroProps) {
   const [hasVideo, setHasVideo] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Only decode/play the video while the hero is on screen, and resume on
+  // return — fixes stutter from background decoding and "stuck after scroll".
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    const tryPlay = () => el.play().catch(() => {})
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) tryPlay()
+        else el.pause()
+      },
+      { threshold: 0.1 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   return (
     <section
@@ -21,11 +40,18 @@ export function Hero({ onStart }: HeroProps) {
 
       {/* campfire video backdrop */}
       <video
+        ref={videoRef}
         autoPlay
         muted
         loop
         playsInline
+        preload="auto"
         onLoadedData={() => setHasVideo(true)}
+        onEnded={(e) => {
+          // manual loop fallback if the loop attribute is dropped/throttled
+          e.currentTarget.currentTime = 0
+          e.currentTarget.play().catch(() => {})
+        }}
         className="absolute inset-0 -z-10 h-full w-full object-cover transition-opacity duration-1000"
         style={{ opacity: hasVideo ? 1 : 0 }}
       >
@@ -71,18 +97,14 @@ export function Hero({ onStart }: HeroProps) {
         {ui.hero.intro}
       </motion.p>
 
-      <motion.button
-        type="button"
-        onClick={onStart}
+      <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 1.4 }}
-        whileHover={{ scale: 1.08, y: -2 }}
-        whileTap={{ scale: 0.96 }}
-        className="btn-primary relative z-10 mt-9 text-lg"
+        className="relative z-10 mt-9"
       >
-        {ui.hero.start}
-      </motion.button>
+        <FlowButton text={ui.hero.start} onClick={onStart} />
+      </motion.div>
 
       {/* scroll cue */}
       <motion.div
